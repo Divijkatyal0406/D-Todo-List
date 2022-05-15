@@ -11,7 +11,7 @@ contract TodoList{
         bool completed;
     }
 
-    event TaskEvent(string _content,uint time);
+    event TaskEvent(uint id,string _content,uint time,uint priority,bool completed);
 
 
     mapping(uint=>Task) public tasks;
@@ -24,7 +24,7 @@ contract TodoList{
         taskCount++;
         uint priority=block.timestamp-time;
         tasks[taskCount]=Task(taskCount,_content,block.timestamp,priority,false);
-        emit TaskEvent(_content,tasks[taskCount].time);
+        emit TaskEvent(taskCount,_content,tasks[taskCount].time,priority,false);
     }
 
     function deleteTask(uint id) public{
