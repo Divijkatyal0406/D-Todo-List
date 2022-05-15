@@ -1,11 +1,16 @@
 App = {
   loading: false,
   contracts: {},
+  // current:new Date(),
+  // dates:[],
 
   load: async () => {
+    // Load app...
+    // console.log("app loading...")
     await App.loadWeb3()
     await App.loadAccount()
     await App.loadContract()
+
     await App.render()
   },
 
@@ -43,63 +48,75 @@ App = {
   },
 
   loadAccount: async () => {
-    // Set the current blockchain account
-    App.account = web3.eth.accounts[0]
+    App.account = (await web3.eth.getAccounts())[0];
   },
 
   loadContract: async () => {
-    // Create a JavaScript version of the smart contract
-    const todoList = await $.getJSON('TodoList.json')
-    App.contracts.TodoList = TruffleContract(todoList)
+    const todoList = await $.getJSON('TodoList.json');
+    App.contracts.TodoList = TruffleContract(todoList);
     App.contracts.TodoList.setProvider(App.web3Provider)
 
-    // Hydrate the smart contract with values from the blockchain
-    App.todoList = await App.contracts.TodoList.deployed()
+    App.todoList = await App.contracts.TodoList.deployed();
+    
   },
-
   render: async () => {
-    // Prevent double render
+    // $('#account').html(App.account)
     if (App.loading) {
       return
     }
-
-    // Update app loading state
     App.setLoading(true)
-
-    // Render Account
     $('#account').html(App.account)
-
-    // Render Tasks
     await App.renderTasks()
-
-    // Update loading state
     App.setLoading(false)
   },
 
   renderTasks: async () => {
-    // Load the total task count from the blockchain
     const taskCount = await App.todoList.taskCount()
     const $taskTemplate = $('.taskTemplate')
-
-    // Render out each task with a new task template
-    for (var i = 1; i <= taskCount; i++) {
-      // Fetch the task data from the blockchain
+    for (var i = taskCount; i >=1; i--) {
       const task = await App.todoList.tasks(i)
       const taskId = task[0].toNumber()
       const taskContent = task[1]
       const taskCompleted = task[2]
+      // const priority=task[3]
 
+
+      
+
+      // const tt=$('.todotime').val()
+
+      // var utcDate =$('#newTask').val();  // ISO-8601 formatted date returned from server
+      // utcDate+=".000Z";
+      // var today = new Date(utcDate);
+      // console.log(App.current)
+
+      var today = new Date();
+      console.log(today.toString());
+      var dd = String(today.getDate()).padStart(2, '0');
+      var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+      var yyyy = today.getFullYear();
+      today = mm + '/' + dd + '/' + yyyy;
       // Create the html for the task
+      
+      
       const $newTaskTemplate = $taskTemplate.clone()
       $newTaskTemplate.find('.content').html(taskContent)
+      $newTaskTemplate.find('.time').html(today)
       $newTaskTemplate.find('input')
-                      .prop('name', taskId)
-                      .prop('checked', taskCompleted)
-                      .on('click', App.toggleCompleted)
-
+      .prop('name', taskId)
+      .prop('checked', taskCompleted)
+      .on('click', App.toggleCompleted)
+  
+      // priority++;
       // Put the task in the correct list
       if (taskCompleted) {
+        // var uu=document.getElementById("completedTaskList");
+        // uu.append($newTaskTemplate)
+        // uu.setAttribute("class", "list-group-item list-group-item-action")
+
         $('#completedTaskList').append($newTaskTemplate)
+        // $newTaskTemplate.setAttribute("class","list-group-item active")
+        console.log($newTaskTemplate)
       } else {
         $('#taskList').append($newTaskTemplate)
       }
@@ -112,14 +129,29 @@ App = {
   createTask: async () => {
     App.setLoading(true)
     const content = $('#newTask').val()
-    await App.todoList.createTask(content)
+    const priority=$('#priority_num').val()
+    
+    // const time = $('#todotime').val()
+
+    var utcDate =$('#newTask').val();  // ISO-8601 formatted date returned from server
+    utcDate+=".000Z";
+    var localDate = new Date(utcDate);
+    // App.dates.push(utcDate)
+
+    console.log(localDate)
+    // App.current=localDate
+    // console.log(App.current)
+    // https://stackoverflow.com/questions/67273763/blockchain-tutorial-error-the-send-transactions-from-field-must-be-defined
+    // await App.todoList.createTask(content)
+    await App.todoList.createTask(content,{from: App.account})
+    // refresh the page to refetch the tasks
     window.location.reload()
   },
 
   toggleCompleted: async (e) => {
     App.setLoading(true)
     const taskId = e.target.name
-    await App.todoList.toggleCompleted(taskId)
+    await App.todoList.toggleCompleted(taskId, {from: App.account})
     window.location.reload()
   },
 

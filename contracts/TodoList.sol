@@ -1,34 +1,42 @@
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity ^0.5.0;
 
-contract TodoList{
+contract TodoList {
+  uint public taskCount = 0;
 
-    uint public taskCount=0;
-    struct Task{
-        uint id;
-        string content;
-        uint time;
-        uint priority;
-        bool completed;
-    }
+  struct Task {
+    uint id;
+    string content;
+    bool completed;
+  }
 
-    event TaskEvent(uint id,string _content,uint time,uint priority,bool completed);
+  mapping(uint => Task) public tasks;
 
+  event TaskCreated(
+    uint id,
+    string content,
+    bool completed
+  );
 
-    mapping(uint=>Task) public tasks;
+  event TaskCompleted(
+    uint id,
+    bool completed
+  );
 
-    constructor() public{
-        createTask("Test todo", block.timestamp);
-    }
+  constructor() public {
+    createTask("Bring vegies from market");
+  }
 
-    function createTask(string memory _content,uint time) public{
-        taskCount++;
-        uint priority=block.timestamp-time;
-        tasks[taskCount]=Task(taskCount,_content,block.timestamp,priority,false);
-        emit TaskEvent(taskCount,_content,tasks[taskCount].time,priority,false);
-    }
-
-    function deleteTask(uint id) public{
-        delete tasks[id];
-        taskCount--;
-    }
+  function createTask(string memory _content) public {
+    taskCount ++;
+    tasks[taskCount] = Task(taskCount, _content, false);
+    emit TaskCreated(taskCount, _content, false);
+  }
+  
+  function toggleCompleted(uint _id) public {
+    Task memory _task = tasks[_id];
+    _task.completed = !_task.completed;
+    tasks[_id] = _task;
+    emit TaskCompleted(_id, _task.completed);
+  }
 }
+
